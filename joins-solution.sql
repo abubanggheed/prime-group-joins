@@ -21,10 +21,11 @@ JOIN "warehouse" ON "warehouse_product"."warehouse_id" = "warehouse"."id"
 WHERE "description" = 'diet pepsi' AND "on_hand" > 0;
 
 --5. Get the number of orders for each customer. NOTE: It is OK if those without orders are not included in results.
-SELECT "first_name", "last_name", "quantity" FROM "customers"
-JOIN "addresses" ON "addresses"."customer_id" = "customers"."id"
-JOIN "orders" ON "orders"."address_id" = "addresses"."id"
-JOIN "line_items" ON "line_items"."order_id" = "orders"."id";
+SELECT "first_name", "last_name", COALESCE(SUM("quantity"), 0) FROM "customers"
+FULL OUTER JOIN "addresses" ON "addresses"."customer_id" = "customers"."id"
+FULL OUTER JOIN "orders" ON "orders"."address_id" = "addresses"."id"
+FULL OUTER JOIN "line_items" ON "line_items"."order_id" = "orders"."id"
+GROUP BY "first_name", "last_name";
 
 --6. How many customers do we have?
 SELECT COUNT("id") FROM "customers";
@@ -38,7 +39,22 @@ JOIN "products" ON "line_items"."product_id" = "products"."id"
 WHERE "description" = 'diet pepsi';
 
 --9. How much was the total cost for each order?
+SELECT "description", SUM("quantity") * "unit_price" FROM "line_items"
+JOIN "products" ON "line_items"."product_id" = "products"."id"
+GROUP BY "description", "unit_price";
 
 --10. How much has each customer spent in total?
+SELECT "first_name", "last_name", SUM("quantity" * "unit_price") FROM "customers"
+LEFT OUTER JOIN "addresses" ON "addresses"."customer_id" = "customers"."id"
+LEFT OUTER JOIN "orders" ON "orders"."address_id" = "addresses"."id"
+LEFT OUTER JOIN "line_items" ON "line_items"."order_id" = "orders"."id"
+LEFT OUTER JOIN "products" ON "line_items"."product_id" = "products"."id"
+GROUP BY "first_name", "last_name";
 
 --11. How much has each customer spent in total? Customers who have spent $0 should still show up in the table. It should say 0, not NULL (research coalesce).
+SELECT "first_name", "last_name", COALESCE(SUM("quantity" * "unit_price"), 0) FROM "customers"
+LEFT OUTER JOIN "addresses" ON "addresses"."customer_id" = "customers"."id"
+LEFT OUTER JOIN "orders" ON "orders"."address_id" = "addresses"."id"
+LEFT OUTER JOIN "line_items" ON "line_items"."order_id" = "orders"."id"
+LEFT OUTER JOIN "products" ON "line_items"."product_id" = "products"."id"
+GROUP BY "first_name", "last_name";
